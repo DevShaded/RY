@@ -1,23 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Weather\API;
 
 use App\Actions\Weather\WeatherIconAction;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class ForecastFromAPIAction
+final class ForecastFromAPIAction
 {
     private const CACHE_TTL_SECONDS = 1800; // 30 minutes
+
     private const DEFAULT_FORECAST_DAYS = 5;
 
     /**
-     * @throws ConnectionException
-     * @throws \Exception
+     * @throws Exception
      */
     public static function handle(float $latitude, float $longitude): array
     {
@@ -26,7 +29,7 @@ class ForecastFromAPIAction
         return Cache::remember(
             $cacheKey,
             self::CACHE_TTL_SECONDS,
-            fn() => self::fetchAndFormat($latitude, $longitude)
+            fn () => self::fetchAndFormat($latitude, $longitude)
         );
     }
 
@@ -41,43 +44,43 @@ class ForecastFromAPIAction
 
     /**
      * @throws ConnectionException
-     * @throws \Exception
+     * @throws Exception
      */
     private static function fetchAndFormat(float $lat, float $lon): array
     {
         try {
-            $resp    = self::callApi($lat, $lon);
+            $resp = self::callApi($lat, $lon);
             $rawData = self::validateResponse($resp);
 
             $grouped = self::groupByDate($rawData['list']);
-            $days    = self::sliceDays($grouped);
+            $days = self::sliceDays($grouped);
 
             return self::buildForecast($days);
 
         } catch (ConnectionException $e) {
-            Log::error('Weather API connection error: ' . $e->getMessage());
+            Log::error('Weather API connection error: '.$e->getMessage());
             throw new ConnectionException('Kunne ikke koble til værtjenesten', 0, $e);
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             if (preg_match('/^(Kunne ikke|Uventet|Værtjeneste|For mange)/u', $e->getMessage())) {
                 throw $e;
             }
 
-            Log::error('Weather forecast error: ' . $e->getMessage());
-            throw new \Exception('Det oppsto en feil ved henting av værmelding', 0, $e);
+            Log::error('Weather forecast error: '.$e->getMessage());
+            throw new Exception('Det oppsto en feil ved henting av værmelding', 0, $e);
         }
     }
 
     /**
      * @throws ConnectionException
+     * @throws Exception
      */
     private static function callApi(float $lat, float $lon): Response
     {
-        $url = config('services.openweather.base_url') . '/forecast';
+        $url = config('services.openweather.base_url').'/forecast';
 
         $resp = Http::get($url, [
-            'lat'   => $lat,
-            'lon'   => $lon,
+            'lat' => $lat,
+            'lon' => $lon,
             'appid' => config('services.openweather.api_key'),
             'units' => config('services.openweather.units', 'metric'),
         ]);
@@ -90,35 +93,35 @@ class ForecastFromAPIAction
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     private static function handleError(Response $resp): void
     {
-        $code    = $resp->status();
+        $code = $resp->status();
         $message = $resp->json('message', 'Ukjent feil');
 
-        Log::error("Weather API error: {$message} (Status: {$code})");
+        Log::error("Weather API error: $message (Status: $code)");
 
         if ($code === 401) {
-            throw new \Exception("Værtjeneste API-nøkkel er ugyldig");
+            throw new Exception('Værtjeneste API-nøkkel er ugyldig');
         }
 
         if ($code === 429) {
-            throw new \Exception("For mange forespørsler til værtjenesten");
+            throw new Exception('For mange forespørsler til værtjenesten');
         }
 
-        throw new \Exception("Kunne ikke hente værmelding: {$message}");
+        throw new Exception("Kunne ikke hente værmelding: $message");
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     private static function validateResponse(Response $resp): array
     {
         $data = $resp->json();
 
         if (empty($data['list']) || ! is_array($data['list'])) {
-            throw new \Exception("Uventet dataformat fra værtjenesten");
+            throw new Exception('Uventet dataformat fra værtjenesten');
         }
 
         return $data;
@@ -140,7 +143,7 @@ class ForecastFromAPIAction
 
             $key = date('Y-m-d', $item['dt']);
 
-            $days[$key]['dt']    ??= $item['dt'];
+            $days[$key]['dt'] ??= $item['dt'];
             $days[$key]['temps'][] = $item['main']['temp'];
             $days[$key]['conds'][] = $item['weather'][0]['description'];
             $days[$key]['icons'][] = $item['weather'][0]['icon'];
@@ -158,21 +161,22 @@ class ForecastFromAPIAction
     private static function sliceDays(array $grouped): array
     {
         $limit = config('services.openweather.forecast_days', self::DEFAULT_FORECAST_DAYS);
+
         return array_slice($grouped, 0, $limit, true);
     }
 
     private static function buildForecast(array $days): array
     {
         $result = [];
-        $i      = 0;
+        $i = 0;
 
         foreach ($days as $day) {
             $result[] = [
-                'day'       => self::formatDay($day['dt'], $i),
+                'day' => self::formatDay($day['dt'], $i),
                 'condition' => self::mostCommon($day['conds'], true),
-                'high'      => round(max($day['temps'])),
-                'low'       => round(min($day['temps'])),
-                'icon'      => WeatherIconAction::handle(
+                'high' => round(max($day['temps'])),
+                'low' => round(min($day['temps'])),
+                'icon' => WeatherIconAction::handle(
                     self::mostCommon($day['icons'])
                 ),
             ];
@@ -182,12 +186,11 @@ class ForecastFromAPIAction
         return $result;
     }
 
-    /** @param bool $capitalize */
     private static function mostCommon(array $values, bool $capitalize = false): string
     {
         $counts = array_count_values($values);
         arsort($counts);
-        $key    = array_key_first($counts);
+        $key = array_key_first($counts);
 
         if ($capitalize) {
             return mb_convert_case($key, MB_CASE_TITLE, 'UTF-8');
