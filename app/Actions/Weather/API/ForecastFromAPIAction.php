@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 
 final class ForecastFromAPIAction
 {
-    private const CACHE_TTL_SECONDS = 1800; // 30 minutes
+    private const CACHE_TTL_SECONDS = 300; // 5 minutes
 
     private const DEFAULT_FORECAST_DAYS = 5;
 
