@@ -13,7 +13,7 @@ import {
     CloudMoon,
 } from "lucide-vue-next";
 
-const iconMap = {
+const iconMap: Record<string, typeof Cloud> = {
     sun: Sun,
     moon: Moon,
     cloud: Cloud,
@@ -26,7 +26,7 @@ const iconMap = {
 };
 
 defineProps<{
-    forecast: ForecastEntity[];
+    forecast?: (ForecastEntity)[] | null;
 }>();
 
 const ForecastIcon = (icon: string) => {
