@@ -2,6 +2,7 @@
 import ForecastCard from '@/components/ForecastCard.vue';
 import WeatherCard from '@/components/WeatherCard.vue';
 import { Weather } from '@/types';
+import { Head } from '@inertiajs/vue3';
 
 defineProps<{
     weather: Weather;
@@ -9,6 +10,10 @@ defineProps<{
 </script>
 
 <template>
+    <Head>
+        <title>{{ weather.data.name }}</title>
+    </Head>
+
     <div class="min-h-screen">
         <div class="max-w-5xl mx-auto">
             <section class="space-y-6 py-12">
