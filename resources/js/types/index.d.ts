@@ -37,3 +37,33 @@ export interface User {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface Weather {
+    data: Data;
+}
+export interface Data {
+    id: number;
+    name: string;
+    country: string;
+    temperature: number;
+    condition: string;
+    humidity: number;
+    wind_speed: number;
+    visibility: number;
+    feels_like: number;
+    icon: string;
+    created_at: string;
+    updated_at: string;
+    forecast?: (ForecastEntity)[] | null;
+}
+export interface ForecastEntity {
+    id: number;
+    day: string;
+    condition: string;
+    high: number;
+    low: number;
+    icon: string;
+    created_at: string;
+    updated_at: string;
+    weather_id: number;
+}

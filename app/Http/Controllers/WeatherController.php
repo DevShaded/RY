@@ -99,8 +99,6 @@ final class WeatherController extends Controller
             }
         }
 
-        return $weather->load('forecast');
-
         return Inertia::render('Weather/Show', [
             'weather' => new WeatherResource($weather->load('forecast')),
         ]);
