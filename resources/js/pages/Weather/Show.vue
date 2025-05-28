@@ -6,6 +6,7 @@ import WeatherCard from '@/components/WeatherCard.vue';
 import { formatDateTime } from '@/lib/utils';
 import { Weather } from '@/types';
 import { Head } from '@inertiajs/vue3';
+import { ArrowLeftIcon } from 'lucide-vue-next';
 
 defineProps<{
     weather: Weather;
@@ -24,6 +25,14 @@ defineProps<{
                     <CitySearch placeholder="Søk etter by..." />
                 </div>
 
+                <div>
+                    <!-- Go back link -->
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                        <ExternalTextLink :href="route('home')" class="flex hover:underline">
+                            <ArrowLeftIcon class="size-5" /> Tilbake til væroversikt
+                        </ExternalTextLink>
+                    </p>
+                </div>
                 <WeatherCard :weather="weather" />
 
                 <ForecastCard :forecast="weather.data.forecast" />
