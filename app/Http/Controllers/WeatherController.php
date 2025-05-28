@@ -113,7 +113,7 @@ final class WeatherController extends Controller
         // Handle cases where weather data couldn't be found
         if (! $weather) {
             return redirect()->to(route('home'))
-                ->with('error', 'Værmelding for '.Str::title($location).' ble ikke funnet.');
+                ->withErrors(['Værmelding for '.Str::title($location).' ble ikke funnet.']);
         }
 
         // Handle exceptions that weren't cached
