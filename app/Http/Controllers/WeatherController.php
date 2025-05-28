@@ -24,15 +24,22 @@ final class WeatherController extends Controller
 
     public function index()
     {
-        $weathers = Weather::with('forecast')->select([
-            'id',
-            'name',
-            'country',
-            'temperature',
-        ])->get();
+        $recentSearches = session('recent_weather_searches', []);
+
+        $weatherData = collect($recentSearches)->map(function ($search, $index) {
+            return [
+                'id' => $index + 1,
+                'name' => $search['name'],
+                'country' => $search['country'],
+                'temperature' => $search['temperature'],
+                'icon' => $search['icon'],
+            ];
+        })->values()->all();
 
         return Inertia::render('Index', [
-            'weathers' => WeatherResource::collection($weathers),
+            'weathers' => [
+                'data' => $weatherData
+            ],
         ]);
     }
 
@@ -116,6 +123,9 @@ final class WeatherController extends Controller
                 $weather->load('forecast');
             }
 
+            // Store this search in session for recent searches
+            $this->storeRecentSearch($weather);
+
             return Inertia::render('Weather/Show', [
                 'weather' => new WeatherResource($weather),
             ]);
@@ -130,6 +140,38 @@ final class WeatherController extends Controller
             return redirect()->route('home')
                 ->with('error', 'Det oppsto en feil ved henting av værdata. Vennligst prøv igjen senere.');
         }
+    }
+
+    /**
+     * Store a weather search in the session for recent searches
+     */
+    private function storeRecentSearch(Weather $weather): void
+    {
+        $recentSearches = session('recent_weather_searches', []);
+
+        // Create search entry
+        $searchEntry = [
+            'name' => $weather->name,
+            'country' => $weather->country,
+            'temperature' => $weather->temperature,
+            'icon' => $weather->icon,
+            'searched_at' => now()->toISOString(),
+        ];
+
+        // Remove if already exists (to avoid duplicates)
+        $recentSearches = collect($recentSearches)
+            ->reject(fn($search) => $search['name'] === $weather->name)
+            ->values()
+            ->all();
+
+        // Add to beginning of array
+        array_unshift($recentSearches, $searchEntry);
+
+        // Keep only last 10 searches
+        $recentSearches = array_slice($recentSearches, 0, 10);
+
+        // Store back in session
+        session(['recent_weather_searches' => $recentSearches]);
     }
 
     private function makeCacheKey(string $location): string

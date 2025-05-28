@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useDebounce } from '@/composables/useDebounce';
 import { router } from '@inertiajs/vue3';
 import { Search, X } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 defineProps<{
     placeholder?: string;
@@ -95,8 +95,14 @@ watch(debouncedSearch, async (value) => {
     }
 });
 
-onMounted(() => {
+onMounted(async () => {
     document.addEventListener('click', handleClickOutside);
+    await nextTick();
+    setTimeout(() => {
+        if (searchInput.value?.$el) {
+            searchInput.value.$el.focus();
+        }
+    }, 100);
 });
 
 onBeforeUnmount(() => {
@@ -105,7 +111,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div ref="searchContainer" class="relative w-full max-w-xs">
+    <div ref="searchContainer" class="relative w-full max-w-xl">
         <div class="relative">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <Search :class="[loading ? 'animate-pulse' : '', 'h-4 w-4 text-neutral-400']" />
