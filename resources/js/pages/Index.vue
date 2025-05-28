@@ -1,12 +1,7 @@
-<script setup lang="ts">
-
-</script>
+<script setup lang="ts"></script>
 
 <template>
-    <div class="container mx-auto p-4">
-    </div>
+    <div class="container mx-auto p-4"></div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

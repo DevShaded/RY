@@ -18,9 +18,9 @@ defineProps<{
     </Head>
 
     <div class="min-h-screen">
-        <div class="max-w-5xl mx-auto">
+        <div class="mx-auto max-w-5xl">
             <section class="space-y-6 py-12">
-                <div class="flex justify-center mb-8">
+                <div class="mb-8 flex justify-center">
                     <CitySearch placeholder="Søk etter by..." />
                 </div>
 
@@ -29,7 +29,9 @@ defineProps<{
                 <ForecastCard :forecast="weather.data.forecast" />
 
                 <div class="text-center text-sm text-neutral-500 dark:text-neutral-400">
-                    <p>Værdataene er hentet fra <ExternalTextLink href="https://openweathermap.org" target="_blank">Openweathermap</ExternalTextLink></p>
+                    <p>
+                        Værdataene er hentet fra <ExternalTextLink href="https://openweathermap.org" target="_blank">Openweathermap</ExternalTextLink>
+                    </p>
                     <p class="mt-3">Sist oppdatert {{ formatDateTime(weather.data.updated_at) }}</p>
                 </div>
             </section>
@@ -37,6 +39,4 @@ defineProps<{
     </div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

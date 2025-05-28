@@ -54,7 +54,7 @@ export interface Data {
     icon: string;
     created_at: string;
     updated_at: string;
-    forecast?: (ForecastEntity)[] | null;
+    forecast?: ForecastEntity[] | null;
 }
 export interface ForecastEntity {
     id: number;
