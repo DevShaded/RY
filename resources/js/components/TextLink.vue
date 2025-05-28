@@ -7,6 +7,7 @@ interface Props {
     tabindex?: number;
     method?: Method;
     as?: string;
+    external?: boolean;
 }
 
 defineProps<Props>();
