@@ -3,7 +3,7 @@ import CitySearch from '@/components/CitySearch.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { Cloud, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun, AlertCircle } from 'lucide-vue-next';
+import { AlertCircle, Cloud, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun } from 'lucide-vue-next';
 
 export interface WeatherList {
     data?: DataEntity[] | null;
@@ -50,12 +50,10 @@ const page = usePage();
 
         <div v-if="page.props.errors[0]" class="mb-4">
             <Alert class="mb-4 rounded-md" variant="destructive">
-                <AlertCircle class="w-4 h-4" />
-                <AlertTitle>
-                    Feil
-                </AlertTitle>
+                <AlertCircle class="h-4 w-4" />
+                <AlertTitle> Feil </AlertTitle>
                 <AlertDescription>
-                    <ul class="mt-2 list-disc pl-5 ">
+                    <ul class="mt-2 list-disc pl-5">
                         <li v-for="(error, index) in page.props.errors" :key="index">{{ error }}</li>
                     </ul>
                 </AlertDescription>
