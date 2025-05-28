@@ -9,6 +9,7 @@ use App\Actions\Weather\API\WeatherFromAPIAction;
 use App\Models\Weather;
 use DB;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 final class UpdateWeatherAction
@@ -21,7 +22,7 @@ final class UpdateWeatherAction
     {
         $currentWeatherData = WeatherFromAPIAction::handle($weather->name);
 
-        DB::transaction(function () use ($currentWeatherData) {
+        DB::transaction(function () use ($currentWeatherData, $weather) {
             $updateWeather = StoreWeatherAction::handle($currentWeatherData);
 
             $updateWeather->forecast()->delete();
@@ -32,6 +33,19 @@ final class UpdateWeatherAction
             );
 
             StoreForecastAction::handle($updateWeather, $forecastData);
+
+            // Clear the cache for this weather location
+            self::clearWeatherCache($weather->name);
         });
+    }
+
+    private static function clearWeatherCache(string $location): void
+    {
+        $cacheKey = sprintf(
+            'weather_show_%s',
+            mb_strtolower(trim($location))
+        );
+        
+        Cache::forget($cacheKey);
     }
 }

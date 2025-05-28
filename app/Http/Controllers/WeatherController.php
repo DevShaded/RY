@@ -12,6 +12,7 @@ use App\Http\Resources\WeatherResource;
 use App\Models\Weather;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -19,6 +20,8 @@ use Inertia\Inertia;
 
 final class WeatherController extends Controller
 {
+    private const CACHE_TTL_SECONDS = 900; // 15 minutes
+
     public function index()
     {
         $weathers = Weather::with('forecast')->select([
@@ -51,56 +54,89 @@ final class WeatherController extends Controller
                 ->withInput();
         }
 
-        // First try exact match (more efficient for indexed columns)
-        $weather = Weather::where('name', $location)
-            ->orWhere('name', 'like', $location.'%') // Then try starts with
-            ->first();
+        $cacheKey = $this->makeCacheKey($location);
 
-        if (! $weather) {
-            try {
-                $currentWeather = WeatherFromAPIAction::handle($location);
+        $weather = Cache::remember(
+            $cacheKey,
+            self::CACHE_TTL_SECONDS,
+            function () use ($location) {
+                // First try exact match (more efficient for indexed columns)
+                $weather = Weather::where('name', $location)
+                    ->orWhere('name', 'like', $location.'%') // Then try starts with
+                    ->first();
 
-                if (! $currentWeather) {
-                    return redirect()->to(route('home'))
-                        ->with('error', 'Værmelding for '.Str::title($location).' ble ikke funnet.');
-                }
-
-                $weather = DB::transaction(function () use ($currentWeather) {
+                if (! $weather) {
                     try {
-                        $weather = StoreWeatherAction::handle($currentWeather);
+                        $currentWeather = WeatherFromAPIAction::handle($location);
 
-                        $forecastData = ForecastFromAPIAction::handle(
-                            $currentWeather['coord']['lat'],
-                            $currentWeather['coord']['lon']
-                        );
+                        if (! $currentWeather) {
+                            return null;
+                        }
 
-                        StoreForecastAction::handle($weather, $forecastData);
+                        $weather = DB::transaction(function () use ($currentWeather) {
+                            try {
+                                $weather = StoreWeatherAction::handle($currentWeather);
 
-                        return $weather;
+                                $forecastData = ForecastFromAPIAction::handle(
+                                    $currentWeather['coord']['lat'],
+                                    $currentWeather['coord']['lon']
+                                );
+
+                                StoreForecastAction::handle($weather, $forecastData);
+
+                                return $weather;
+                            } catch (Exception $e) {
+                                // Re-throw to trigger transaction rollback
+                                throw $e;
+                            }
+                        });
+                    } catch (ConnectionException $e) {
+                        // Don't cache connection errors, re-throw to handle in controller
+                        throw $e;
                     } catch (Exception $e) {
-                        // Re-throw to trigger transaction rollback
+                        // Don't cache other errors, re-throw to handle in controller
                         throw $e;
                     }
-                });
+                }
 
-                return redirect()->route('weather.show', [
-                    'location' => $weather->name,
-                ]);
-            } catch (ConnectionException $e) {
-                // Handle network connection issues
-                return redirect()->route('home')
-                    ->with('error', 'Kunne ikke koble til værtjenesten. Vennligst prøv igjen senere.');
-            } catch (Exception $e) {
-                // Handle any other unexpected errors
-                report($e); // Log the exception
-
-                return redirect()->route('home')
-                    ->with('error', 'Det oppsto en feil ved henting av værdata. Vennligst prøv igjen senere.');
+                return $weather;
             }
+        );
+
+        // Handle cases where weather data couldn't be found
+        if (! $weather) {
+            return redirect()->to(route('home'))
+                ->with('error', 'Værmelding for '.Str::title($location).' ble ikke funnet.');
         }
 
-        return Inertia::render('Weather/Show', [
-            'weather' => new WeatherResource($weather->load('forecast')),
-        ]);
+        // Handle exceptions that weren't cached
+        try {
+            // If we got weather from cache but it doesn't have forecast loaded, load it
+            if (! $weather->relationLoaded('forecast')) {
+                $weather->load('forecast');
+            }
+
+            return Inertia::render('Weather/Show', [
+                'weather' => new WeatherResource($weather),
+            ]);
+        } catch (ConnectionException $e) {
+            // Handle network connection issues
+            return redirect()->route('home')
+                ->with('error', 'Kunne ikke koble til værtjenesten. Vennligst prøv igjen senere.');
+        } catch (Exception $e) {
+            // Handle any other unexpected errors
+            report($e); // Log the exception
+
+            return redirect()->route('home')
+                ->with('error', 'Det oppsto en feil ved henting av værdata. Vennligst prøv igjen senere.');
+        }
+    }
+
+    private function makeCacheKey(string $location): string
+    {
+        return sprintf(
+            'weather_show_%s',
+            mb_strtolower(trim($location))
+        );
     }
 }
