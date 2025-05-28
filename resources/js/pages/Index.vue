@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CitySearch from '@/components/CitySearch.vue';
 import { Card, CardContent } from '@/components/ui/card';
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { Cloud, CloudLightning, CloudMoon, CloudRain, CloudSnow, CloudSun, Moon, Sun } from 'lucide-vue-next';
 
 export interface WeatherList {
@@ -37,6 +37,9 @@ const locationIcon = (icon: string) => {
 </script>
 
 <template>
+    <Head>
+        <title>Din værdata</title>
+    </Head>
     <div class="container mx-auto min-h-screen max-w-4xl p-4">
         <div class="mb-8 flex justify-center">
             <CitySearch placeholder="Search for a city..." />
