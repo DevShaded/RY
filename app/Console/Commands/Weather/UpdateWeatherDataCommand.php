@@ -14,7 +14,7 @@ final class UpdateWeatherDataCommand extends Command
 {
     protected $signature = 'weather:update-weather-data';
 
-    protected $description = 'Command description';
+    protected $description = 'Update stale weather data in the database';
 
     /**
      * @throws Throwable
