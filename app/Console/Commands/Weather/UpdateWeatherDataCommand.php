@@ -22,7 +22,7 @@ final class UpdateWeatherDataCommand extends Command
      */
     public function handle(): void
     {
-        $staleWeathers = Weather::where('updated_at', '<', now()->subSeconds(1))
+        $staleWeathers = Weather::where('updated_at', '<', now()->subMinutes(10))
             ->get();
 
         if ($staleWeathers->isEmpty()) {
