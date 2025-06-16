@@ -1,3 +1,5 @@
+> This project got me the top grade on my developer exam :D
+
 # RY - Weather app made with Laravel and OpenWeatherMap API
 Ry is a weather application built with Laravel that utilizes the OpenWeatherMap API to provide real-time weather data. It features a user-friendly interface, allowing users to search for current weather conditions in various locations.
 
